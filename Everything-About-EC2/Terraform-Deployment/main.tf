@@ -255,3 +255,84 @@ resource "aws_autoscaling_group" "web" {
     propagate_at_launch = true
   }
 }
+
+# Create Network ACL for Public Subnets
+resource "aws_network_acl" "public" {
+  vpc_id = aws_vpc.main.id
+  tags = {
+    Name = "public-nacl"
+  }
+}
+
+resource "aws_network_acl_rule" "public_inbound_http" {
+  network_acl_id = aws_network_acl.public.id
+  rule_number    = 100
+  egress         = false
+  protocol       = "tcp"
+  rule_action    = "allow"
+  cidr_block     = "0.0.0.0/0"
+  from_port      = 80
+  to_port        = 80
+}
+
+resource "aws_network_acl_rule" "public_outbound" {
+  network_acl_id = aws_network_acl.public.id
+  rule_number    = 100
+  egress         = true
+  protocol       = "tcp"
+  rule_action    = "allow"
+  cidr_block     = "0.0.0.0/0"
+  from_port      = 0
+  to_port        = 65535
+}
+
+resource "aws_network_acl_association" "public_1" {
+  subnet_id     = aws_subnet.public_1.id
+  network_acl_id = aws_network_acl.public.id
+}
+
+resource "aws_network_acl_association" "public_2" {
+  subnet_id     = aws_subnet.public_2.id
+  network_acl_id = aws_network_acl.public.id
+}
+
+# Create Network ACL for Private Subnet
+resource "aws_network_acl" "private" {
+  vpc_id = aws_vpc.main.id
+  tags = {
+    Name = "private-nacl"
+  }
+}
+
+resource "aws_network_acl_rule" "private_outbound" {
+  network_acl_id = aws_network_acl.private.id
+  rule_number    = 100
+  egress```hcl
+         = true
+  protocol       = "tcp"
+  rule_action    = "allow"
+  cidr_block     = "0.0.0.0/0"
+  from_port      = 0
+  to_port        = 65535
+}
+
+resource "aws_network_acl_rule" "private_inbound_vpc" {
+  network_acl_id = aws_network_acl.private.id
+  rule_number    = 100
+  egress         = false
+  protocol       = "tcp"
+  rule_action    = "allow"
+  cidr_block     = aws_vpc.main.cidr_block
+  from_port      = 0
+  to_port        = 65535
+}
+
+resource "aws_network_acl_association" "private" {
+  subnet_id     = aws_subnet.private.id
+  network_acl_id = aws_network_acl.private.id
+}
+
+# Output the DNS name of the load balancer
+output "lb_dns_name" {
+  value = aws_lb.web.dns_name
+}
