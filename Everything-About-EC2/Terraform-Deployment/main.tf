@@ -2,29 +2,6 @@ provider "aws" {
   region = var.region
 }
 
-# Create IAM Role and Policy for Auto Scaling
-resource "aws_iam_role" "autoscaling_role" {
-  name = "autoscaling-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Effect = "Allow",
-        Principal = {
-          Service = "autoscaling.amazonaws.com"
-        },
-        Action = "sts:AssumeRole"
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "autoscaling_role_policy_attachment" {
-  role       = aws_iam_role.autoscaling_role.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM"
-}
-
 # Create IAM Role and Policy for EC2 Instances
 resource "aws_iam_role" "ec2_role" {
   name = "ec2-role"
@@ -271,7 +248,6 @@ resource "aws_autoscaling_group" "web" {
   vpc_zone_identifier  = [aws_subnet.public_1.id, aws_subnet.public_2.id]
   launch_configuration = aws_launch_configuration.web.id
   target_group_arns    = [aws_lb_target_group.web.arn]
-  service_linked_role_arn = aws_iam_role.autoscaling_role.arn
 
   tag {
     key                 = "Name"
